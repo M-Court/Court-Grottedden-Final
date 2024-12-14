@@ -1,0 +1,79 @@
+Class Entry:
+    Description:
+        Holds data for a single table entry.
+
+    Constructor:
+        Initialize properties:
+            id = -1 (default, indicates not determined)
+            name
+            date
+            book_of_bible
+            main_character_or_event
+            standingout_verse
+            time_spent_min
+            practical_action
+
+    Method get():
+        Return a tuple of all properties except id.
+
+    Method to_string():
+        Format and return a string representation of the entry.
+
+Class DatabaseConnection:
+    Description:
+        Handles the database connection and operations.
+
+    Constructor:
+        Connect to the sqlite database 'Faith_Walk.db'.
+        Initialize cursor for executing sql commands.
+        Create 'DailyBibleReading' table if it does not exist with columns:
+            id (autoincrement primary key)
+            name
+            date
+            book_of_bible
+            main_character_or_event
+            standingout_verse
+            time_spent
+            practical_action
+
+    Method add_entry(entry):
+        If not connected to database:
+            Raise an error.
+        Insert entry into 'DailyBibleReading' table using values from entry.get().
+        Commit changes.
+
+    Method get_entries():
+        If not connected to database:
+            Raise an error.
+        Fetch all rows from 'DailyBibleReading' table.
+        For each row:
+            Create an Entry object using row data.
+        Return a list of Entry objects.
+
+    Method reconnect():
+        If already connected to database:
+            Raise an error.
+        Reconnect to SQLite database 'Faith_Walk.db'.
+
+    Method disconnect(commit = False):
+        If not connected to database:
+            Raise an error.
+        If commit is True:
+            Commit changes to the database.
+        Close the connection and set it to None.
+
+    Method clear_table():
+        Delete all entries from 'DailyBibleReading' table.
+        Commit changes.
+
+Test Code:
+    If this file is executed directly:
+        Create a DatabaseConnection object.
+        Clear the table.
+        Create a test Entry object with:
+            name = "Ray", date = "November 12", book_of_bible = "Genesis",
+            main_character_or_event = "Creation", 
+            standingout_verse = "Genesis 1:1: 'In the beginning when God created the heavens and the earth'",
+            time_spent_min = 22, practical_action = "An action".
+        Add the test Entry to the database.
+        Print the first entry from get_entries().
