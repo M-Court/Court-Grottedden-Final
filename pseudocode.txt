@@ -77,3 +77,26 @@ Test Code:
             time_spent_min = 22, practical_action = "An action".
         Add the test Entry to the database.
         Print the first entry from get_entries().
+
+
+Initialize a Tkinter window.
+
+Create input fields for:
+    Name
+    Date
+    Book of the Bible
+    Main Character or Event
+    Standout Verse
+    Time Spent
+    Practical Action
+
+Create a button labeled "Add Entry".
+
+When "Add Entry" button is clicked:
+    1. Read data from input fields.
+    2. Validate that all required fields are filled.
+    3. Create a new Entry object using the input data.
+    4. Call the add_entry method of DatabaseConnection to add the Entry to the database.
+    5. Show a success message or error message if something goes wrong.
+
+Run the Tkinter main loop.
