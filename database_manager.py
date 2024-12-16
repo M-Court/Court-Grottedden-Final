@@ -100,7 +100,7 @@ class DatabaseConnection:
 
 #cool! i'll make i a test entry too...
 
-    test_entry_2: Entry = Entry("Mackenzie", "December 1, "Luke", "Christmas", "Luke 2:11", "Unto us a Savior is born!", 15m "an action")
+    test_entry_2: Entry = Entry("Mackenzie", "December 1, "Luke", "Christmas", "Luke 2:11", "Unto us a Savior is born!", 15, "sing 'Hark the Harold'")
 
 
 
