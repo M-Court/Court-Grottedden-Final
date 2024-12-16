@@ -1,10 +1,11 @@
 this is a text file to help us decide what we each are doing
 
 tasks to be done...
--   create tkinter "entry" button
+-   create tkinter "entry" button     (I like designing tkinter. i could do this pretty easily)
 -   create methods
     -   
     -
     -
 
-- create 
+- create a connection the database     (not as familiar with database. you?)
+- 
