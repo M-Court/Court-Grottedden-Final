@@ -1,0 +1,10 @@
+this is a text file to help us decide what we each are doing
+
+tasks to be done...
+-   create tkinter "entry" button
+-   create methods
+    -   
+    -
+    -
+
+- create 
