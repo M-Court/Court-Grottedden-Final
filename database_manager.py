@@ -6,6 +6,7 @@ Sorry, I find it easier to create the idea than the pseudocode, so I kinda swapp
 I created this then the pseudo code, I can create comments and make it easier to understand soon
 
 Its pretty simple 👍
+no problem! :) -mc
 
 """
 
@@ -96,6 +97,11 @@ class DatabaseConnection:
     def clear_table(self) -> None: 
         self.cursor.execute("DELETE FROM DailyBibleReading")
         self.connection.commit()
+
+#cool! i'll make i a test entry too...
+
+    test_entry_2: Entry = Entry("Mackenzie", "December 1, "Luke", "Christmas", "Luke 2:11", "Unto us a Savior is born!", 15m "an action")
+
 
 
 # test code
