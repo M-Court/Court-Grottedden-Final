@@ -37,7 +37,7 @@ Class DatabaseConnection:
             practical_action
 
     Method add_entry(entry):
-        If not connected to database:
+        If not connected to database: 
             Raise an error.
         Insert entry into 'DailyBibleReading' table using values from entry.get().
         Commit changes.
