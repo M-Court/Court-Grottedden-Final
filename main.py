@@ -2,13 +2,13 @@ import tkinter as Tk
 from tkinter import ttk, font
 import sqlite3
 
-############################creating a new entry#####################
 
+#################### #1 THE VIEW TAB #####################
+
+#Class that holds the data of a singular entry in table
 class Entry:
-    """
-    Class that holds the data of a singular entry in a table 
-    """
     def __init__(self, name: str, date: str, book_of_bible: str, main_character_or_event: str, standingout_verse: str, time_spent_min: str, practical_action: str, id: int = -1) -> None:
+        #create fields
         self.id: int = id # -1 means not determined
         self.name: str = name
         self.date: str = date
@@ -26,6 +26,7 @@ class Entry:
         out += f"Verse: {self.standingout_verse:<50} Time spent: {self.time_spent_min} min\t Action: {self.practical_action:<30}"
         return out
 
+#connect to database
 class DatabaseConnection:
     def __init__(self) -> None:
         self.connection: sqlite3.Connection | None = sqlite3.connect('Faith_Walk.db')
@@ -81,13 +82,14 @@ class DatabaseConnection:
         self.connection.close()
         self.connection = None
 
-    ################# for easy debugging, TODO: remove when done ##############
+    ################# for easy debugging, TODO: remove when done ##############???
 
     def clear_table(self) -> None: 
         self.cursor.execute("DELETE FROM DailyBibleReading")
         self.connection.commit()
 
-    ############################class for adding an entry##################
+    ############################class for adding an entry##################???
+
 
 
 class Table:
@@ -130,15 +132,19 @@ class Table:
                 cell.config(state=Tk.DISABLED)  # Make cells read-only if desired
                 self.text_boxes.append(cell)
 
-            # add button
 
     def on_frame_configure(self, event):
         """Reset the scroll region to encompass the inner frame"""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+
+############################2 THE UPDATE TAB#######################
+
 class GUI:
     def __init__(self):
+        #connect to database
         self.database = DatabaseConnection()
+
         # create the main window
         self.window = Tk.Tk()
         self.window.title("Faith Walk")
@@ -146,6 +152,7 @@ class GUI:
         self.window.geometry('700x500')
         self.window.resizable(False, False)
 
+        #create the Update tab
         self.tabController = ttk.Notebook(self.window)
         self.viewDatabaseTab = ttk.Frame(self.tabController)
         self.changeDatabaseTab = ttk.Frame(self.tabController)
@@ -153,32 +160,37 @@ class GUI:
         self.tabController.add(self.changeDatabaseTab, text ='Update')
         self.tabController.pack(expand=1, fill="both")
 
-#------------------CHANGE Database Tab---------------------#
-        #pack labels in top frame
+#------------------CHANGE Database Tab---------------------
 
+        #pack labels in top frame
         self.left_frame = ttk.Frame(self.changeDatabaseTab)
         self.right_frame = ttk.Frame(self.changeDatabaseTab)
         self.top_frame = ttk.Frame(self.changeDatabaseTab)
         self.bottom_frame = ttk.Frame(self.changeDatabaseTab)
 
-        # use grid so the labels and textboxes can be packed side-by-side
-#----------------create a grid------------------
+#----------------grid------------------
+#use grid to pack labels, textboxes, and edit buttons packed side-by-side
         self.left_frame.grid(row=1, column=0, sticky="nsew")
         self.right_frame.grid(row=1, column=1, sticky="nsew")
         self.top_frame.grid(row=0, column=1, sticky="nsew")
         self.bottom_frame.grid(row=2, column=1, sticky="nsew")
+        
+        #RAYMOND ---- add edit buttons to grid
 
-#---------------TOP FRAME----------------------------
+#TOP FRAME----------------------------
+        #create and pack title, subtitle
         self.title_label = Tk.Label(self.top_frame, text='FAITH WALK...', font=font.Font(size = 30))
         self.subtitle_label = Tk.Label(self.top_frame, text='keeping track of your daily discipleship', font=font.Font(size = 12))
+        self.ID_button = Tk.Label(self.top_frame, text='the ID for this row is {table_ID}', font=font.Font(size = 12))
 
         self.title_label.pack()
         self.subtitle_label.pack()
+        self.ID_button.pack(side='right')
 
-        #create variable for font size in order to change easily
+        #variable to change font size
         self.label_size: font = font.Font(size=20)
 
-#-----------------LEFT FRAME--------------------------
+#LEFT FRAME--------------------------
         self.name_label = ttk.Label(self.left_frame, text='Name: ', font=self.label_size, width=5)
         self.date_label = ttk.Label(self.left_frame, text='Date: ', font=self.label_size, width=5)
         self.book_label = ttk.Label(self.left_frame, text='Book: ', font=self.label_size, width=5)
@@ -187,7 +199,16 @@ class GUI:
         self.time_label = ttk.Label(self.left_frame, text='Time: ', font=self.label_size, width=5)
         self.action_label = ttk.Label(self.left_frame, text='Action: ', font=self.label_size, width=5)
 
-#---------------LEFT FRAME-----------------
+        #pack the textbox widgets into the left frame
+        self.name_box.pack()
+        self.date_box.pack()
+        self.book_box.pack()
+        self.event_box.pack()
+        self.verse_box.pack()
+        self.time_box.pack()
+        self.action_box.pack()
+
+#RIGHT FRAME-----------------
         #create textbox widgets
         self.name_box = Tk.Text(self.right_frame, width=70, height=2)
         self.date_box = Tk.Text(self.right_frame, width=70, height=2)
@@ -197,12 +218,6 @@ class GUI:
         self.time_box = Tk.Text(self.right_frame, width=70, height=2)
         self.action_box = Tk.Text(self.right_frame, width=70, height=2)
 
-#--------------BOTTOM FRAME---------------
-        #create and pack the submit button
-        self.submit_button = Tk.Button(self.bottom_frame, text='Submit', command=self.save_to_database, width=17, height=1, font=self.label_size)
-        self.submit_button.pack()
-
-#---------------RIGHT FRAME---------------
         #pack the labels into the right frame
         self.name_label.pack()
         self.date_label.pack()
@@ -212,29 +227,39 @@ class GUI:
         self.time_label.pack()
         self.action_label.pack()
 
-#-----------LEFT FRAME--------------------
+#BOTTOM FRAME---------------
+        #create the Submit and Cancel button
+        self.submit_button = Tk.Button(self.bottom_frame, text='Submit', command=self.save_to_database, width=17, height=1, font=self.label_size)
+        self.cancel_button = Tk.Button(self.buttom_frame, text='Cancel', command=self.cancel_entry, width=17, height=1, font=self.label_size)
 
-        #packing the textbox widgets into the left frame
-        self.name_box.pack()
-        self.date_box.pack()
-        self.book_box.pack()
-        self.event_box.pack()
-        self.verse_box.pack()
-        self.time_box.pack()
-        self.action_box.pack()
+        self.submit_button.pack(side='right')
+        self.cancel_button.pack(side'right')
 
+        #need comment here
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-#------------------VIEW Database Tab---------------------#
+        #???
         self.view_table = Table(self.viewDatabaseTab, self.database)
 
+#---------------MAINLOOP-----------------------
+        #run mainloop
         self.window.mainloop()
 
-    def on_closing(self) -> None:
-        self.database.disconnect()
-        self.window.destroy()
-    
-    #create method to save entry to database row
+#---------------METHODS------------------------
+
+    #method for CANCEL button
+    #to clear entry box and send you back to "View" tab
+    def cancel_entry():
+        #step 1 = clear textboxes
+
+        #step 2 = send user back to the view tab
+        
+    #method for EDIT buttons
+    def edit_entry():
+        #step 1 = send user to Update tab
+
+    #method for SUBMIT button
+    #to save entry to database row
     def save_to_database(self) -> None:
         name_string: str = self.name_box.get("1.0", Tk.END)
         date_string: str = self.date_box.get("1.0", Tk.END)
@@ -244,20 +269,28 @@ class GUI:
         time_string: str = self.time_box.get("1.0", Tk.END)
         action_string: str = self.action_box.get("1.0", Tk.END)
 
-        #use the text from the textbox to create an entry for the database
-        database_Entry = Entry(name_string, date_string, book_string, event_string, verse_string, time_string, action_string)
+     #method to disconnect from database
+    def on_closing(self) -> None:
+        self.database.disconnect()
+        self.window.destroy()
+   
 
-        #add the entry to the database
+#---------------------CREATE ENTRY-------------------
+
+        #create an entry for database
+        database_Entry = Entry(name_string, date_string, book_string, event_string, verse_string, time_string, action_string)
+        #add entry to database
         self.database.add_entry(database_Entry)
 
+        #??
         print(self.database.get_entries()[0])
 
         #update table with the information added to the database
         self.view_table.append(database_Entry)
 
+
+#-----------------------INSTANCE----------------------------
 #create an instance of the main class
 if __name__ == "__main__":
     gui = GUI()
-
-#################### #2 VIEW TAB #####################
 
