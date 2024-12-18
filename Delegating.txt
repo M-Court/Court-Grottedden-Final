@@ -10,3 +10,4 @@ tasks to be done...
             3.  reconnect
             4.  disconnect
     - create a connection to the database     (not as familiar with database. you?)
+
