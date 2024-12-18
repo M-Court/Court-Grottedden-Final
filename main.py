@@ -2,8 +2,7 @@ import tkinter as Tk
 from tkinter import ttk, font
 import sqlite3
 
-
-#################### #1 THE VIEW TAB #####################
+############################## #1 THE VIEW TAB ###################################
 
 #Class that holds the data of a singular entry in table
 class Entry:
@@ -82,16 +81,17 @@ class DatabaseConnection:
         self.connection.close()
         self.connection = None
 
-    ################# for easy debugging, TODO: remove when done ##############???
+
+    ################# for easy debugging, TODO: remove when done #######???
 
     def clear_table(self) -> None: 
         self.cursor.execute("DELETE FROM DailyBibleReading")
         self.connection.commit()
 
-    ############################class for adding an entry##################???
+    ############################class for adding an entry######???
 
 
-
+#create table 
 class Table:
     def __init__(self, window: Tk.Tk, database: DatabaseConnection):
 
@@ -138,7 +138,7 @@ class Table:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
 
-############################2 THE UPDATE TAB#######################
+##################################2 THE UPDATE TAB#######################################
 
 class GUI:
     def __init__(self):
