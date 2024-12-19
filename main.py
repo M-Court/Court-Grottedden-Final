@@ -21,9 +21,11 @@ class Entry:
         self.time_spent_min: str = time_spent_min
         self.practical_action: str = practical_action
 
+    #
     def get(self) -> list[str]:
         return [self.name, self.date, self.book_of_bible, self.main_character_or_event, self.standingout_verse, self.time_spent_min, self.practical_action, self.id]
 
+    #
     def __str__(self) -> str: # split into multiple for easy reading
         out: str = f"Name: {self.name:<8} Date: {self.date:<15} Book: {self.book_of_bible:<8} Character or Event: {self.main_character_or_event:<15}"
         out += f"Verse: {self.standingout_verse:<50} Time spent: {self.time_spent_min} min\t Action: {self.practical_action:<30}"
@@ -48,15 +50,18 @@ class DatabaseConnection:
         self.connection.commit()
 
     def add_entry(self, entry: Entry) -> None:
-        if not self.connection: 
-            # raise an exception if not connected to the database, 
-            # could easily have a failsafe but it is best that we know there are errors
+        if not self.connection:
+            #raise an exception if not connected to the database, 
+            #could easily have a failsafe but it is best that we know there are errors
             raise Exception("ADD entry error: Not connected to database") 
         formatted_entry: list[str] = entry.get()
         formatted_entry.pop(-1)
         self.cursor.execute("INSERT into DailyBibleReading (name_row, date_row, book_row, event_row, verse_row, time_row, action_row) VALUES (?, ?, ?, ?, ?, ?, ?)",
             tuple(formatted_entry)
         )
+
+        entry.id = self.cursor.lastrowid
+        
         self.connection.commit()
 
     def edit_entry(self, entry: Entry) -> None:
@@ -104,7 +109,7 @@ class DatabaseConnection:
 
     ################# for easy debugging, TODO: remove when done ##############
 
-    def clear_table(self) -> None: 
+    def clear_table(self) -> None:
         self.cursor.execute("DELETE FROM DailyBibleReading")
         self.connection.commit()
 
@@ -122,7 +127,7 @@ class DataType(enum.Enum):
 class Table_Row:
     def __init__(self, parent: Tk.Frame, row_index: int, row: Entry, parentGUIinstance: GUI) -> None:
         """
-        
+        Used for storing rows in the database viewing table.
         """
         self.row: Entry = row
         self.row_index: int = row_index
@@ -226,6 +231,7 @@ class Table:
         row_being_deleted = self.table_rows[index]
         # delete from data base
         self.parentGUIinstance.database.delete_entry(row_being_deleted.row.id)
+        print(row_being_deleted.row.id)
 
         # delete all textboxes in the row
         for textbox in row_being_deleted.text_boxes.values():
@@ -233,16 +239,16 @@ class Table:
         row_being_deleted.edit_button.destroy()
         row_being_deleted.delete_button.destroy()
 
-        self.table_rows.pop()
+        self.table_rows.pop(index)
         # shift all textboxes accordingly
         for new_index, table_row in enumerate(self.table_rows):
-            table_row.row_index = new_index - 1
+            table_row.row_index = new_index
             for textbox in table_row.text_boxes.values():
                 textbox.grid(row=new_index)
 
             table_row.edit_button.grid(row=new_index, column=7)
             table_row.delete_button.grid(row=new_index, column=8)
-
+    
     #create scrollbar
     def on_frame_configure(self, event):
         #Reset the scroll region to encompass the inner frame
@@ -359,7 +365,7 @@ class GUI:
         #detects when window is closed and calls 'on_closing' method
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-#------------------VIEW Database Tab---------------------#
+#------------------VIEW Tab---------------------#
         #view table
         self.view_table = Table(self)
 
@@ -470,7 +476,7 @@ class GUI:
         #add the entry to the database
         self.database.add_entry(database_Entry)
 
-        #update table with the information added to the database
+        #update table row with the info from the inbox
         self.view_table.table_rows.append(Table_Row(self.view_table.table_frame, len(self.view_table.table_rows), database_Entry, self))
 
 #instance of the main class
