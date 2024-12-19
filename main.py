@@ -21,8 +21,8 @@ class Entry:
         self.time_spent_min: str = time_spent_min
         self.practical_action: str = practical_action
 
-    def get(self) -> tuple:
-        return (self.name, self.date, self.book_of_bible, self.main_character_or_event, self.standingout_verse, self.time_spent_min, self.practical_action, self.id)
+    def get(self) -> list[str]:
+        return [self.name, self.date, self.book_of_bible, self.main_character_or_event, self.standingout_verse, self.time_spent_min, self.practical_action, self.id]
 
     def __str__(self) -> str: # split into multiple for easy reading
         out: str = f"Name: {self.name:<8} Date: {self.date:<15} Book: {self.book_of_bible:<8} Character or Event: {self.main_character_or_event:<15}"
@@ -52,8 +52,10 @@ class DatabaseConnection:
             # raise an exception if not connected to the database, 
             # could easily have a failsafe but it is best that we know there are errors
             raise Exception("ADD entry error: Not connected to database") 
+        formatted_entry: list[str] = entry.get()
+        formatted_entry.pop(-1)
         self.cursor.execute("INSERT into DailyBibleReading (name_row, date_row, book_row, event_row, verse_row, time_row, action_row) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            entry.get()
+            tuple(formatted_entry)
         )
         self.connection.commit()
 
@@ -65,7 +67,7 @@ class DatabaseConnection:
         UPDATE DailyBibleReading
         SET name_row = ?, date_row = ?, book_row = ?, event_row = ?, verse_row = ?, time_row = ?, action_row = ?
         WHERE id = ?
-        """, entry.get()) 
+        """, tuple(entry.get())) 
 
         self.connection.commit()
 
@@ -119,36 +121,47 @@ class DataType(enum.Enum):
 
 class Table_Row:
     def __init__(self, parent: Tk.Frame, row_index: int, row: Entry, parentGUIinstance: GUI) -> None:
+        """
+        
+        """
         self.row: Entry = row
         self.row_index: int = row_index
         self.text_boxes: dict[DataType, Tk.Text] = {}
         self.parentGUIinstance: GUI = parentGUIinstance
 
+        #
         for column_index in range(7):
-            cell = Tk.Text(parent, width=12, height=2, wrap='word')
+            cell = Tk.Text(parent, width=12, height=3, wrap='word')
             cell.grid(row=row_index, column=column_index, padx=1, pady=1)
             cell.insert(Tk.END, row.get()[column_index])
             cell.config(state=Tk.DISABLED)  # Make cells read-only if desired
             self.text_boxes.update({DataType(column_index): cell})
 
-        self.edit_button = Tk.Button(parent, text="Edit", width=9, height=1, command=self.edit_press)
-        self.delete_button = Tk.Button(parent, text="Delete", width=9, height=1, command=self.delete_press)
+        #create edit and delete button
+        self.edit_button = Tk.Button(parent, text="Edit", width=9, height=2, command=self.edit_press)
+        self.delete_button = Tk.Button(parent, text="Delete", width=9, height=2, command=self.delete_press)
 
+        #set edit and delete buttons into the View Tab grid
         self.edit_button.grid(row=row_index, column=7, padx=1, pady=1)
         self.delete_button.grid(row=row_index, column=8, padx=1, pady=1)
 
+    #edit button sends user to Update tab
     def edit_press(self, *args) -> None:
         self.parentGUIinstance.row_being_edited = self.row_index
+        #sends user to Update Tab
         self.parentGUIinstance.tabController.select(self.parentGUIinstance.changeDatabaseTab)
+        #edits the row
         self.parentGUIinstance.edit_row(self.row)
 
+    #messagebox confirming deleting a row
     def delete_press(self, *args) -> None:
         response = messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete this entry?")
     
         if response:  # if clicks Yes
             self.parentGUIinstance.view_table.delete_row(self.row_index)
-        # nothing happens if pressed no
+        # nothing happens if pressed No
 
+    #put text in each row
     def set_text(self, new_text: str, database_value: DataType) -> None:
         match (database_value):
             case DataType.NAME:
@@ -172,6 +185,7 @@ class Table_Row:
         box.insert(Tk.END, new_text)
         box.config(state=Tk.DISABLED)
 
+#create the table in the view tab
 class Table:
     def __init__(self, parentGUIinstance: GUI):
         # Create frame to hold the canvas and scrollbar
@@ -207,12 +221,13 @@ class Table:
         for index in range(len(database_entries)):
             self.table_rows.append(Table_Row(self.table_frame, index, database_entries[index], parentGUIinstance))
 
+    #deleting a row from the table
     def delete_row(self, index: int):
         row_being_deleted = self.table_rows[index]
         # delete from data base
         self.parentGUIinstance.database.delete_entry(row_being_deleted.row.id)
 
-        # delete all textboxes
+        # delete all textboxes in the row
         for textbox in row_being_deleted.text_boxes.values():
             textbox.destroy()
         row_being_deleted.edit_button.destroy()
@@ -221,28 +236,30 @@ class Table:
         self.table_rows.pop()
         # shift all textboxes accordingly
         for new_index, table_row in enumerate(self.table_rows):
-            if table_row.row_index == new_index:
-                continue # dont need to change
-            table_row.row_index = new_index
+            table_row.row_index = new_index - 1
             for textbox in table_row.text_boxes.values():
                 textbox.grid(row=new_index)
 
             table_row.edit_button.grid(row=new_index, column=7)
             table_row.delete_button.grid(row=new_index, column=8)
 
+    #create scrollbar
     def on_frame_configure(self, event):
-        """Reset the scroll region to encompass the inner frame"""
+        #Reset the scroll region to encompass the inner frame
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
 class CreateEntryGUI:
     def __init__(self, parentGUIinstance: GUI) -> None:
+        """
+        GUI for updating the 
+        """
         self.parentGUIinstance: GUI = parentGUIinstance
         self.left_frame = ttk.Frame(self.parentGUIinstance.changeDatabaseTab)
         self.right_frame = ttk.Frame(self.parentGUIinstance.changeDatabaseTab)
         self.top_frame = ttk.Frame(self.parentGUIinstance.changeDatabaseTab)
         self.bottom_frame = ttk.Frame(self.parentGUIinstance.changeDatabaseTab)
 
-        # use grid so the labels and textboxes can be packed side-by-side
+# use grid so the labels and textboxes can be packed side-by-side
 #----------------create a grid------------------
         self.left_frame.grid(row=1, column=0, sticky="nsew")
         self.right_frame.grid(row=1, column=1, sticky="nsew")
@@ -250,23 +267,32 @@ class CreateEntryGUI:
         self.bottom_frame.grid(row=2, column=1, sticky="nsew")
 
 #---------------TOP FRAME----------------------------
-        self.title_label = Tk.Label(self.top_frame, text='FAITH WALK...', font=font.Font(size = 30))
-        self.subtitle_label = Tk.Label(self.top_frame, text='keeping track of your daily discipleship', font=font.Font(size = 12))
+        self.title_label = Tk.Label(self.top_frame, text='FAITH WALK', font=font.Font(size = 36))
+        self.subtitle_label = Tk.Label(self.top_frame, text='keeping track of your daily discipleship', font=font.Font(size = 13))
 
         self.title_label.pack()
         self.subtitle_label.pack()
 
         #create variable for font size in order to change easily
-        self.label_size: font = font.Font(size=20)
+        self.label_size: font = font.Font(size=17)
 
-#-----------------LEFT FRAME--------------------------
-        self.name_label = ttk.Label(self.left_frame, text='Name: ', font=self.label_size, width=6)
-        self.date_label = ttk.Label(self.left_frame, text='Date: ', font=self.label_size, width=6)
-        self.book_label = ttk.Label(self.left_frame, text='Book: ', font=self.label_size, width=6)
-        self.event_label = ttk.Label(self.left_frame, text='Event: ', font=self.label_size, width=6)
-        self.verse_label = ttk.Label(self.left_frame, text='Verse: ', font=self.label_size, width=6)
-        self.time_label = ttk.Label(self.left_frame, text='Time: ', font=self.label_size, width=6)
-        self.action_label = ttk.Label(self.left_frame, text='Action: ', font=self.label_size, width=6)
+#-----------------RIGHT FRAME--------------------------
+        self.name_label = ttk.Label(self.left_frame, text='NAME ', font=self.label_size, width=7)
+        self.date_label = ttk.Label(self.left_frame, text='DATE ', font=self.label_size, width=7)
+        self.book_label = ttk.Label(self.left_frame, text='BOOK ', font=self.label_size, width=7)
+        self.event_label = ttk.Label(self.left_frame, text='EVENT ', font=self.label_size, width=7)
+        self.verse_label = ttk.Label(self.left_frame, text='VERSE ', font=self.label_size, width=7)
+        self.time_label = ttk.Label(self.left_frame, text='MINUTE ', font=self.label_size, width=7)
+        self.action_label = ttk.Label(self.left_frame, text='ACTION ', font=self.label_size, width=7)
+
+        #pack the labels into the right frame
+        self.name_label.pack(padx=10)
+        self.date_label.pack(padx=10, pady=4)
+        self.book_label.pack(padx=10, pady=4)
+        self.event_label.pack(padx=10, pady=4)
+        self.verse_label.pack(padx=10, pady=4)
+        self.time_label.pack(padx=10, pady=4)
+        self.action_label.pack(padx=10, pady=4)
 
 #---------------LEFT FRAME-----------------
         #create textbox widgets
@@ -278,36 +304,30 @@ class CreateEntryGUI:
         self.time_box = Tk.Text(self.right_frame, width=90, height=2)
         self.action_box = Tk.Text(self.right_frame, width=90, height=2)
 
+        #packing the textbox widgets into the left frame
+        self.name_box.pack(padx=10)
+        self.date_box.pack(padx=10)
+        self.book_box.pack(padx=10)
+        self.event_box.pack(padx=10)
+        self.verse_box.pack(padx=10)
+        self.time_box.pack(padx=10)
+        self.action_box.pack(padx=10)
+        
 #--------------BOTTOM FRAME---------------
+        #create and pack the cancel button
+        self.cancel_button = Tk.Button(self.bottom_frame, text='Cancel', command=self.parentGUIinstance.cancel_action, width=17, height=1, font=self.label_size)
+        self.cancel_button.grid(row=0, column=1, padx=50)
+
         #create and pack the submit button
         self.submit_button = Tk.Button(self.bottom_frame, text='Submit', command=self.parentGUIinstance.submit_pressed, width=17, height=1, font=self.label_size)
-        self.submit_button.pack()
-        # dont pack unless it is to be seen
-        self.cancel_button = Tk.Button(self.bottom_frame, text='Cancel', command=self.parentGUIinstance.cancel_action, width=17, height=1, font=self.label_size)
-
-#---------------RIGHT FRAME---------------
-        #pack the labels into the right frame
-        self.name_label.pack(padx=5)
-        self.date_label.pack(padx=5)
-        self.book_label.pack(padx=5)
-        self.event_label.pack(padx=5)
-        self.verse_label.pack(padx=5)
-        self.time_label.pack(padx=5)
-        self.action_label.pack(padx=5)
-
-#-----------LEFT FRAME--------------------
-
-        #packing the textbox widgets into the left frame
-        self.name_box.pack()
-        self.date_box.pack()
-        self.book_box.pack()
-        self.event_box.pack()
-        self.verse_box.pack()
-        self.time_box.pack()
-        self.action_box.pack()
+        self.submit_button.grid(row=0, column=0, padx=50)
 
 class GUI:
     def __init__(self):
+        """
+        Main window and GUI
+        """
+        # open a connection to the database
         self.database = DatabaseConnection()
         
         #generate_filler_entries(self.database)
@@ -318,6 +338,7 @@ class GUI:
         self.window.geometry('900x500')
         self.window.resizable(False, False)
 
+        #creating both Update and View tab
         self.tabController = ttk.Notebook(self.window)
         self.viewDatabaseTab = ttk.Frame(self.tabController)
         self.changeDatabaseTab = ttk.Frame(self.tabController)
@@ -326,26 +347,36 @@ class GUI:
         self.tabController.pack(expand=1, fill="both")
         self.tabController.bind("<<NotebookTabChanged>>", self.on_tab_change)
 
-#------------------CHANGE Database Tab---------------------#
-        #pack labels in top frame
+#------------------UPDATE Tab---------------------#
 
+        #create interface for the Update tab
         self.change_tab = CreateEntryGUI(self)
 
         # the index of the row that is being edited
+        # if it == -1, then there is no row being edited
         self.row_being_edited: int = -1
-
+        
+        #detects when window is closed and calls 'on_closing' method
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
 #------------------VIEW Database Tab---------------------#
+        #view table
         self.view_table = Table(self)
 
+        #run mainloop
         self.window.mainloop()
 
     def on_closing(self) -> None:
+        """
+        Fires when 'X' button is clicked 
+        """
         self.database.disconnect()
         self.window.destroy()
 
     def clear_textboxes(self):
+        """
+        Delete contents of textboxes, resets textbox widgets
+        """
         # clear textboxes
         self.change_tab.name_box.delete("1.0", Tk.END)
         self.change_tab.date_box.delete("1.0", Tk.END)
@@ -356,6 +387,9 @@ class GUI:
         self.change_tab.action_box.delete("1.0", Tk.END)
 
     def get_textboxes(self) -> Entry:
+        """
+        Change data from textbox widgets into string
+        """
         name_string: str = self.change_tab.name_box.get("1.0", Tk.END)
         date_string: str = self.change_tab.date_box.get("1.0", Tk.END)
         book_string: str = self.change_tab.book_box.get("1.0", Tk.END)
@@ -366,8 +400,11 @@ class GUI:
 
         datarow_id = self.view_table.table_rows[self.row_being_edited].row.id
         return Entry(name_string, date_string, book_string, event_string, verse_string, time_string, action_string, id = datarow_id)
-    
+
     def edit_row(self, entry: Entry) -> None:
+        """
+        Edit a specific row in the view table
+        """
         # set textboxes to correct values, make cancel button visible and lock tab view on "Change Tab" until finished
 
         self.clear_textboxes()
@@ -379,19 +416,26 @@ class GUI:
         self.change_tab.verse_box.insert(Tk.END, entry.standingout_verse)
         self.change_tab.time_box.insert(Tk.END, entry.time_spent_min)
         self.change_tab.action_box.insert(Tk.END, entry.practical_action)
-        # make cancel button visible
-        self.change_tab.cancel_button.pack()
-        ...
+
     def on_tab_change(self, *args):
+        """
+        Calls when the user changes tabs 
+        """
+        # if a row is being edited, it will automatically switch back to the Update tab
         if self.row_being_edited != -1:
             self.tabController.select(self.changeDatabaseTab)
-
+ 
     def submit_pressed(self, *args):
+        """
+        Create submit button that
+        """
         if self.row_being_edited == -1:
             self.save_to_database()
         else:
             editing_entry: Entry = self.get_textboxes()
+            # edit in the database
             self.database.edit_entry(editing_entry)
+            # set the string in the textboxes inside the row
             self.view_table.table_rows[self.row_being_edited].set_text(editing_entry.name, DataType.NAME)
             self.view_table.table_rows[self.row_being_edited].set_text(editing_entry.date, DataType.DATE)
             self.view_table.table_rows[self.row_being_edited].set_text(editing_entry.book_of_bible, DataType.BOOK)
@@ -401,21 +445,25 @@ class GUI:
             self.view_table.table_rows[self.row_being_edited].set_text(editing_entry.practical_action, DataType.ACTION)
 
             self.row_being_edited = -1
-            self.tabController.select(self.viewDatabaseTab)
+        # focus on the view data tab
+        self.tabController.select(self.viewDatabaseTab)
 
-        # hide cancel button
-        self.change_tab.cancel_button.pack_forget()
+        #hide cancel button
         self.clear_textboxes()
     
     def cancel_action(self, *args):
+        """
+        Method to switch to view tab when cancel is clicked
+        """
         self.row_being_edited = -1
         # hide cancel button
-        self.change_tab.cancel_button.pack_forget()
         self.clear_textboxes()
         self.tabController.select(self.viewDatabaseTab)
 
-    #create method to save entry to database row
     def save_to_database(self) -> None:
+        """
+        Method to save entry to database row
+        """
         #use the text from the textbox to create an entry for the database
         database_Entry: Entry = self.get_textboxes()
 
@@ -425,6 +473,6 @@ class GUI:
         #update table with the information added to the database
         self.view_table.table_rows.append(Table_Row(self.view_table.table_frame, len(self.view_table.table_rows), database_Entry, self))
 
-#create an instance of the main class
+#instance of the main class
 if __name__ == "__main__":
     gui = GUI()
