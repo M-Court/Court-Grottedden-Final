@@ -5,7 +5,8 @@ import enum
 
 # make reference of GUI class so other classes depending on it can access
 class GUI:...
-############################creating a new entry#####################
+
+############################ UPDATE TAB ############################
 
 class Entry:
     """
@@ -23,16 +24,16 @@ class Entry:
 
     #
     def get(self) -> list[str]:
+        """
+        Get the row in the form of a list
+        """
         return [self.name, self.date, self.book_of_bible, self.main_character_or_event, self.standingout_verse, self.time_spent_min, self.practical_action, self.id]
-
-    #
-    def __str__(self) -> str: # split into multiple for easy reading
-        out: str = f"Name: {self.name:<8} Date: {self.date:<15} Book: {self.book_of_bible:<8} Character or Event: {self.main_character_or_event:<15}"
-        out += f"Verse: {self.standingout_verse:<50} Time spent: {self.time_spent_min} min\t Action: {self.practical_action:<30}"
-        return out
 
 class DatabaseConnection:
     def __init__(self) -> None:
+        """
+        Open a database connection and manage it
+        """
         self.connection: sqlite3.Connection | None = sqlite3.connect('Faith_Walk.db')
         self.cursor: sqlite3.Cursor = self.connection.cursor()
         # create the table if it does not currently exist
@@ -50,6 +51,9 @@ class DatabaseConnection:
         self.connection.commit()
 
     def add_entry(self, entry: Entry) -> None:
+        """
+        Add an entry to the database
+        """
         if not self.connection:
             #raise an exception if not connected to the database, 
             #could easily have a failsafe but it is best that we know there are errors
@@ -65,6 +69,9 @@ class DatabaseConnection:
         self.connection.commit()
 
     def edit_entry(self, entry: Entry) -> None:
+        """
+        Edit an entry in a database
+        """
         if entry.id == -1:
             raise Exception("When editing database Entry, ID = -1")
         
@@ -77,10 +84,16 @@ class DatabaseConnection:
         self.connection.commit()
 
     def delete_entry(self, entry_id: int):
+        """
+        Delete a row in the database using an ID
+        """
         self.cursor.execute("DELETE FROM DailyBibleReading WHERE id = ?", (entry_id,))
         self.connection.commit()
 
     def get_entries(self) -> list[Entry]:
+        """
+        Get all rows in the database in the form of Entries
+        """
         if not self.connection: 
             # raise an exception if not connected to the database
             raise Exception("GET entries error: Not connected to database") 
@@ -92,13 +105,10 @@ class DatabaseConnection:
 
         return table
 
-    def reconnect(self) -> None:
-        if self.connection: 
-            # raise an exception if already connected to the database
-            raise Exception("Reconnect error: Already connected to database") 
-        self.connection = sqlite3.connect('Faith_Walk.db')
-
     def disconnect(self, commit: bool = False) -> None:
+        """
+        Disconnect from the database
+        """
         if not self.connection: 
             # raise an exception if not connected to the database
             raise Exception("Disconnect error: Not connected to database") 
@@ -106,14 +116,6 @@ class DatabaseConnection:
             self.connection.commit()
         self.connection.close()
         self.connection = None
-
-    ################# for easy debugging, TODO: remove when done ##############
-
-    def clear_table(self) -> None:
-        self.cursor.execute("DELETE FROM DailyBibleReading")
-        self.connection.commit()
-
-    ############################class for adding an entry##################
 
 class DataType(enum.Enum):
     NAME = 0
@@ -152,6 +154,9 @@ class Table_Row:
 
     #edit button sends user to Update tab
     def edit_press(self, *args) -> None:
+        """
+        Calls upon edit button being pressed.
+        """
         self.parentGUIinstance.row_being_edited = self.row_index
         #sends user to Update Tab
         self.parentGUIinstance.tabController.select(self.parentGUIinstance.changeDatabaseTab)
@@ -160,6 +165,9 @@ class Table_Row:
 
     #messagebox confirming deleting a row
     def delete_press(self, *args) -> None:
+        """
+        Calls upon d button being pressed.
+        """
         response = messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete this entry?")
     
         if response:  # if clicks Yes
@@ -168,6 +176,9 @@ class Table_Row:
 
     #put text in each row
     def set_text(self, new_text: str, database_value: DataType) -> None:
+        """
+        Sets the text of a textbox in a row
+        """
         match (database_value):
             case DataType.NAME:
                 self.row.name = new_text
@@ -190,9 +201,14 @@ class Table_Row:
         box.insert(Tk.END, new_text)
         box.config(state=Tk.DISABLED)
 
+#############################VIEW TAB#########################################
+
 #create the table in the view tab
 class Table:
     def __init__(self, parentGUIinstance: GUI):
+        """
+        Creates a table which is used in the view database tab
+        """
         # Create frame to hold the canvas and scrollbar
         self.parentGUIinstance = parentGUIinstance
         self.canvas_frame = Tk.Frame(self.parentGUIinstance.viewDatabaseTab)
@@ -226,8 +242,10 @@ class Table:
         for index in range(len(database_entries)):
             self.table_rows.append(Table_Row(self.table_frame, index, database_entries[index], parentGUIinstance))
 
-    #deleting a row from the table
     def delete_row(self, index: int):
+        """
+        Delete a row from the table
+        """
         row_being_deleted = self.table_rows[index]
         # delete from data base
         self.parentGUIinstance.database.delete_entry(row_being_deleted.row.id)
@@ -300,7 +318,7 @@ class CreateEntryGUI:
         self.time_label.pack(padx=10, pady=4)
         self.action_label.pack(padx=10, pady=4)
 
-#---------------LEFT FRAME-----------------
+#-------------------LEFT FRAME-----------------
         #create textbox widgets
         self.name_box = Tk.Text(self.right_frame, width=90, height=2)
         self.date_box = Tk.Text(self.right_frame, width=90, height=2)
